@@ -1,14 +1,31 @@
 import Header from "./Header";
 import { BG_URL } from "../utils/constants";
-import { useState } from "react";
+import { useState, useRef } from "react";
+import checkValidData from "../utils/validate";
+
 
 const Login = () => {
 
     const [signInForm, setSignInForm] = useState(true)
+    const [errorMessage, setErrorMessage] = useState(null)
 
     const toggleSignInForm = () => {
         setSignInForm(!signInForm)
     }
+
+    const email = useRef(null);
+    const password = useRef(null);
+    const name = useRef(null);
+
+    const handleButtonClick = () => {
+        const nameVal = !signInForm ? name.current?.value : null;
+        const emailVal = email.current?.value;
+        const passwordVal = password.current?.value;
+
+        const message = checkValidData(emailVal, passwordVal, nameVal);
+        setErrorMessage(message);
+    };
+
 
     return (
         <div className="relative min-h-screen w-full bg-black">
@@ -33,25 +50,26 @@ const Login = () => {
                     </h1>
 
                     {!signInForm && <input
-                        type="text"
+                        type="text" ref={name}
                         placeholder="Full Name"
                         className="mb-4 w-full rounded bg-[#333] px-4 py-3.5 text-sm text-white placeholder-gray-400 outline-none focus:bg-[#454545] focus:ring-2 focus:ring-gray-400"
                     />}
 
                     <input
-                        type="text"
+                        type="text" ref={email}
                         placeholder="Email or mobile number"
                         className="mb-4 w-full rounded bg-[#333] px-4 py-3.5 text-sm text-white placeholder-gray-400 outline-none focus:bg-[#454545] focus:ring-2 focus:ring-gray-400"
                     />
 
                     <input
-                        type="password"
+                        type="password" ref={password}
                         placeholder="Password"
-                        className="mb-6 w-full rounded bg-[#333] px-4 py-3.5 text-sm text-white placeholder-gray-400 outline-none focus:bg-[#454545] focus:ring-2 focus:ring-gray-400"
+                        className="mb-4 w-full rounded bg-[#333] px-4 py-3.5 text-sm text-white placeholder-gray-400 outline-none focus:bg-[#454545] focus:ring-2 focus:ring-gray-400"
                     />
 
+                    <p className="text-red-500 font-semibold mb-4">{errorMessage}</p>
                     <button
-                        type="submit"
+                        type="submit" onClick={() => { handleButtonClick() }}
                         className="w-full cursor-pointer rounded bg-[#e50914] py-3 text-base font-semibold text-white transition duration-200 hover:bg-[#c11119]"
                     >
                         {signInForm ? "Sign In" : "Sign Up"}
