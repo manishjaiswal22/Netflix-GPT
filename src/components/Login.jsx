@@ -2,12 +2,19 @@ import Header from "./Header";
 import { BG_URL } from "../utils/constants";
 import { useState, useRef } from "react";
 import checkValidData from "../utils/validate";
-
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { auth } from "../utils/firebase";
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { addUser } from "../utils/userSlice";
 
 const Login = () => {
 
     const [signInForm, setSignInForm] = useState(true)
     const [errorMessage, setErrorMessage] = useState(null)
+
+    const navigate = useNavigate();
+    const dispatch = useDispatch();
 
     const toggleSignInForm = () => {
         setSignInForm(!signInForm)
@@ -17,6 +24,29 @@ const Login = () => {
     const password = useRef(null);
     const name = useRef(null);
 
+    const getFirebaseAuthErrorMessage = (errorCode) => {
+        switch (errorCode) {
+            case "auth/invalid-credential":
+                return "Incorrect email or password. Please try again.";
+            case "auth/user-not-found":
+                return "Sorry, we can't find an account with this email address. Please try again or create a new account.";
+            case "auth/wrong-password":
+                return "Incorrect password. Please try again.";
+            case "auth/email-already-in-use":
+                return "This email is already registered. Please sign in instead.";
+            case "auth/invalid-email":
+                return "Please enter a valid email address.";
+            case "auth/weak-password":
+                return "Password is too weak. Please choose a stronger password.";
+            case "auth/too-many-requests":
+                return "Too many failed attempts. Please try again later.";
+            case "auth/network-request-failed":
+                return "Network error. Please check your internet connection.";
+            default:
+                return "Authentication failed. Please try again.";
+        }
+    };
+
     const handleButtonClick = () => {
         const nameVal = !signInForm ? name.current?.value : null;
         const emailVal = email.current?.value;
@@ -24,6 +54,40 @@ const Login = () => {
 
         const message = checkValidData(emailVal, passwordVal, nameVal);
         setErrorMessage(message);
+
+        if (message) return;
+
+        if (!signInForm) {
+            // Sign Up Logic
+            createUserWithEmailAndPassword(auth, emailVal, passwordVal)
+                .then((userCredential) => {
+                    const user = userCredential.user;
+                    updateProfile(auth.currentUser, {
+                        displayName: nameVal,
+                        photoURL: "https://imgs.search.brave.com/JLUb0ohmQyQgb9ctAxINfXQ8-XWijk5a_NqRYYg3BT8/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9jZG4u/aWNvbnNjb3V0LmNv/bS9pY29uL3ByZW1p/dW0vcG5nLTI1Ni10/aHVtYi9wcm9maWxl/LWljb24tc3ZnLWRv/d25sb2FkLXBuZy0y/MTg0MTM5LnBuZz9m/PXdlYnAmdz0xMjg"
+                    }).then(() => {
+                        const { uid, displayName, email, photoURL } = auth.currentUser;
+                        dispatch(addUser({ uid: uid, displayName: displayName, email: email, photoURL: photoURL }));
+                        navigate("/browse");
+                    }).catch((error) => {
+                        setErrorMessage(getFirebaseAuthErrorMessage(error.code));
+                    });
+                })
+                .catch((error) => {
+                    setErrorMessage(getFirebaseAuthErrorMessage(error.code));
+                });
+        } else {
+            // Sign In Logic
+            signInWithEmailAndPassword(auth, emailVal, passwordVal)
+                .then((userCredential) => {
+                    const user = userCredential.user;
+                    console.log("Signed in user:", user);
+                    navigate("/browse")
+                })
+                .catch((error) => {
+                    setErrorMessage(getFirebaseAuthErrorMessage(error.code));
+                });
+        }
     };
 
 
@@ -79,7 +143,6 @@ const Login = () => {
                         <label className="flex items-center gap-2 cursor-pointer">
                             <input
                                 type="checkbox"
-                                defaultChecked
                                 className="h-4 w-4 rounded accent-[#e50914] bg-gray-700"
                             />
                             <span>Remember me</span>
