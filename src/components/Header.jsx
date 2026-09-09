@@ -5,6 +5,7 @@ import { auth } from "../utils/firebase";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { addUser, removeUser } from "../utils/userSlice";
+import { USER_IMG } from "../utils/constants";
 
 const Header = () => {
     const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -192,9 +193,8 @@ const Header = () => {
                                 alt="Netflix User Avatar"
                             />
                             <svg
-                                className={`w-3 h-3 text-white transition-transform duration-200 ${
-                                    isProfileMenuOpen ? "rotate-180" : ""
-                                }`}
+                                className={`w-3 h-3 text-white transition-transform duration-200 ${isProfileMenuOpen ? "rotate-180" : ""
+                                    }`}
                                 fill="currentColor"
                                 viewBox="0 0 24 24"
                             >
@@ -215,12 +215,12 @@ const Header = () => {
                                             <div className="h-8 w-8 rounded-sm  flex items-center justify-center overflow-hidden">
                                                 <img
                                                     className="w-full h-full object-cover"
-                                                    src={user?.photoURL || "NA"}
+                                                    src={user?.photoURL || USER_IMG}
                                                     alt="NA"
                                                 />
                                             </div>
                                             <span className="text-white group-hover:underline">
-                                                {user?.displayName || "NA"}
+                                                {user?.displayName || user?.email?.split("@")[0]}
                                             </span>
                                         </div>
 
