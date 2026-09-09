@@ -1,10 +1,10 @@
 import { LOGO } from "../utils/constants";
 import { useState, useRef, useEffect } from "react";
-import { signOut } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "../utils/firebase";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
-
+import { useSelector, useDispatch } from "react-redux";
+import { addUser, removeUser } from "../utils/userSlice";
 
 const Header = () => {
     const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -12,19 +12,32 @@ const Header = () => {
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
     const searchInputRef = useRef(null);
     const navigate = useNavigate();
+    const dispatch = useDispatch();
 
     // Subscribe to the Redux store to check if the user is logged in
     const user = useSelector((store) => store.user);
 
     const handleSignOut = () => {
-        signOut(auth)
-            .then(() => {
-                navigate("/");
-            })
-            .catch((error) => {
-                console.error("Sign out error:", error);
-            });
+        signOut(auth).catch((error) => {
+            console.error("Sign out error:", error);
+        });
     };
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (user) {
+                const { uid, displayName, email, photoURL } = user;
+                dispatch(addUser({ uid, displayName, email, photoURL }));
+                navigate("/browse");
+            } else {
+                dispatch(removeUser());
+                navigate("/");
+            }
+        });
+
+        // Unsubscribe when component unmounts
+        return () => unsubscribe();
+    }, [dispatch, navigate]);
 
     useEffect(() => {
         if (isSearchOpen && searchInputRef.current) {
